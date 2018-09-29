@@ -1,8 +1,9 @@
-package ${host.getPackageName()};
+package ${host.getPackageName()}.dao;
 
 #foreach( $field in ${host.getDaoImports()} )
 import ${field};
 #end
+import ${host.getPackageName()}.entity.${host.getPojoClassName()};
 
 import com.ctrip.platform.dal.dao.helper.DalDefaultJpaMapper;
 
@@ -24,10 +25,7 @@ public class ${host.getPojoClassName()}Dao {
 	private DalRowMapper<${host.getPojoClassName()}> mapper;
 	private DalRowMapperExtractor<${host.getPojoClassName()}> extractor;
 	private DalScalarExtractor scalarExtractor;
-	
-	/**
-	 * Initialize the instance of Hotel2GenDao
-	 */
+
 	public ${host.getPojoClassName()}Dao() throws SQLException {
 		this.client = DalClientFactory.getClient(DATA_BASE);
 		this.mapper = new DalDefaultJpaMapper(${host.getPojoClassName()}.class);
@@ -36,10 +34,10 @@ public class ${host.getPojoClassName()}Dao {
 	}
 
 	/**
-	  *Get all ${host.getPojoClassName()} instances
-	  *@return 
-	  *     ${host.getPojoClassName()} collection
-	**/
+	 * Get all ${host.getPojoClassName()} instances
+	 * @return
+	 * ${host.getPojoClassName()} collection
+	 */
 	public List<${host.getPojoClassName()}> getAll(DalHints hints) throws SQLException {
 		StatementParameters parameters = new StatementParameters();
 		hints = DalHints.createIfAbsent(hints);
@@ -49,10 +47,10 @@ public class ${host.getPojoClassName()}Dao {
 	}
 	
 	/**
-	  *Get the count of ${host.getPojoClassName()} instances
-	  *@return 
-	  *     the ${host.getPojoClassName()} records count
-	**/
+	 * Get the count of ${host.getPojoClassName()} instances
+	 * @return
+	 * the ${host.getPojoClassName()} records count
+	 */
 	public int count(DalHints hints) throws SQLException {
 		StatementParameters parameters = new StatementParameters();
 		hints = DalHints.createIfAbsent(hints);	
@@ -61,8 +59,9 @@ public class ${host.getPojoClassName()}Dao {
 	}
 	
 	public List<${host.getPojoClassName()}> getListByPage(int pagesize, int pageNo, DalHints hints) throws SQLException {
-		if(pageNo < 1 || pagesize < 1) 
+		if(pageNo < 1 || pagesize < 1) {
 			throw new SQLException("Illigal pagesize or pageNo, pls check");
+		}
 		
         StatementParameters parameters = new StatementParameters();
 		hints = DalHints.createIfAbsent(hints);	

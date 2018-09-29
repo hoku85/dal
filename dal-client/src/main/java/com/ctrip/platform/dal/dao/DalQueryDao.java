@@ -1,18 +1,16 @@
 package com.ctrip.platform.dal.dao;
 
+import static com.ctrip.platform.dal.dao.helper.EntityManager.getMapper;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Comparator;
 import java.util.List;
 
-import com.ctrip.platform.dal.dao.helper.DalFirstResultMerger;
-import com.ctrip.platform.dal.dao.helper.DalListMerger;
-import com.ctrip.platform.dal.dao.helper.DalObjectRowMapper;
+import com.ctrip.platform.dal.common.enums.DatabaseCategory;
 import com.ctrip.platform.dal.dao.helper.DalRangedResultMerger;
 import com.ctrip.platform.dal.dao.helper.DalRowCallbackExtractor;
 import com.ctrip.platform.dal.dao.helper.DalRowMapperExtractor;
-import com.ctrip.platform.dal.dao.helper.DalSingleResultExtractor;
-import com.ctrip.platform.dal.dao.helper.DalSingleResultMerger;
 import com.ctrip.platform.dal.dao.sqlbuilder.FreeSelectSqlBuilder;
 import com.ctrip.platform.dal.dao.sqlbuilder.FreeUpdateSqlBuilder;
 import com.ctrip.platform.dal.dao.sqlbuilder.MultipleSqlBuilder;
@@ -61,7 +59,7 @@ public final class DalQueryDao {
 	 */
 	public <T> List<T> query(String sql, StatementParameters parameters, DalHints hints, DalRowMapper<T> mapper) 
 			throws SQLException {
-		return queryList(sql, parameters, hints, new DalRowMapperExtractor<T>(mapper));
+		return query(new FreeSelectSqlBuilder<List<T>>().setTemplate(sql).mapWith(mapper), parameters, hints);
 	}
 
 	/**
@@ -78,7 +76,7 @@ public final class DalQueryDao {
 	 */
 	public <T> List<T> query(String sql, StatementParameters parameters, DalHints hints, Class<T> clazz) 
 			throws SQLException {
-		return queryList(sql, parameters, hints, new DalRowMapperExtractor<T>(new DalObjectRowMapper<T>()));
+		return query(new FreeSelectSqlBuilder<List<T>>().setTemplate(sql).mapWith(getMapper(clazz)), parameters, hints);
 	}
 
 	/**
@@ -92,7 +90,7 @@ public final class DalQueryDao {
 	 */
 	public void query(String sql, StatementParameters parameters, DalHints hints, DalRowCallback callback) 
 			throws SQLException {
-		queryList(sql, parameters, hints, new DalRowCallbackExtractor(callback));
+		query(new FreeSelectSqlBuilder<>().setTemplate(sql).extractorWith(new DalRowCallbackExtractor(callback)).nullable(), parameters, hints);
 	}
 	
 	/**
@@ -115,7 +113,8 @@ public final class DalQueryDao {
 	/**
 	 * Select with FreeSelectSqlBuilder. The builder contains sql template. If there is IN (?) clause, the number of "?" should be 1.
 	 * The system will check how many values for the in parameter and compile correct ? for the final sql.
-	 * This method is mainly used with Code Generator  
+	 * This method is mainly used with Code Generator which builder and paramteres are provided separately.
+	 * 
 	 * @param builder
 	 * @param parameters
 	 * @param hints
@@ -123,15 +122,37 @@ public final class DalQueryDao {
 	 * @throws SQLException
 	 */
 	public <T> T query(FreeSelectSqlBuilder<T> builder, StatementParameters parameters, DalHints hints) throws SQLException {
-		ResultMerger<T> merger = (ResultMerger<T>)builder.getResultMerger(hints);
+		ResultMerger<T> merger = builder.getResultMerger(hints);
 		DalResultSetExtractor<T> extractor = builder.getResultExtractor(hints);
 		
 		DalSqlTaskRequest<T> request = new DalSqlTaskRequest<>(
-				logicDbName, builder.with(parameters), hints, new QuerySqlTask<>(extractor), merger);
+				logicDbName, builder.setLogicDbName(logicDbName).with(parameters), hints, new QuerySqlTask<>(extractor), merger);
 		
-		return executor.execute(hints, request, NULLABLE);
+		return executor.execute(hints, request, builder.isNullable());
 	}
 	
+    /**
+     * Select with FreeSelectSqlBuilder. The builder contains sql template. If there is IN (?) clause, the number of "?" should be 1.
+     * The system will check how many values for the in parameter and compile correct ? for the final sql.
+     * 
+     * This method is recommended if you use builder build the parameters with SQL
+     * 
+     * @param builder
+     * @param parameters
+     * @param hints
+     * @return result defined by the type specified when constructing builder
+     * @throws SQLException
+     */
+    public <T> T query(FreeSelectSqlBuilder<T> builder, DalHints hints) throws SQLException {
+        ResultMerger<T> merger = builder.getResultMerger(hints);
+        DalResultSetExtractor<T> extractor = builder.getResultExtractor(hints);
+        
+        DalSqlTaskRequest<T> request = new DalSqlTaskRequest<>(
+                logicDbName, builder.setLogicDbName(logicDbName).setHints(hints), hints, new QuerySqlTask<>(extractor), merger);
+        
+        return executor.execute(hints, request, builder.isNullable());
+    }
+    
 	/**
 	 * Query for the only object in the result. It is expected that there is only one result should be found.
 	 * If there is no result or more than 1 result found, it will throws exception to indicate the exceptional case.
@@ -180,7 +201,7 @@ public final class DalQueryDao {
 	 */
 	public <T> T queryForObject(String sql, StatementParameters parameters, DalHints hints, Class<T> clazz) 
 			throws SQLException {
-		return queryForObject(sql, parameters, hints, new DalObjectRowMapper<T>(), !NULLABLE);
+		return queryForObject(sql, parameters, hints, getMapper(clazz), !NULLABLE);
 	}
 
 	/**
@@ -197,7 +218,7 @@ public final class DalQueryDao {
 	 */
 	public <T> T queryForObjectNullable(String sql, StatementParameters parameters, DalHints hints, Class<T> clazz) 
 			throws SQLException {
-		return queryForObject(sql, parameters, hints, new DalObjectRowMapper<T>(), NULLABLE);
+		return queryForObject(sql, parameters, hints, getMapper(clazz), NULLABLE);
 	}
 	
 	/**
@@ -248,7 +269,7 @@ public final class DalQueryDao {
 	 */
 	public <T> T queryFirst(String sql, StatementParameters parameters, DalHints hints, Class<T> clazz) 
 			throws SQLException {
-		return queryFirst(sql, parameters, hints, new DalObjectRowMapper<T>(), !NULLABLE);
+		return queryFirst(sql, parameters, hints, getMapper(clazz), !NULLABLE);
 	}
 
 	/**
@@ -265,7 +286,7 @@ public final class DalQueryDao {
 	 */
 	public <T> T queryFirstNullable(String sql, StatementParameters parameters, DalHints hints, Class<T> clazz) 
 			throws SQLException {
-		return queryFirst(sql, parameters, hints, new DalObjectRowMapper<T>(), NULLABLE);
+		return queryFirst(sql, parameters, hints, getMapper(clazz), NULLABLE);
 	}
 
 	/**
@@ -301,7 +322,7 @@ public final class DalQueryDao {
 	 */
 	public <T> List<T> queryTop(String sql, StatementParameters parameters, DalHints hints, Class<T> clazz, int count) 
 			throws SQLException {
-		return queryRange(sql, parameters, hints,  new DalObjectRowMapper<T>(), 0, count);
+		return queryRange(sql, parameters, hints,  getMapper(clazz), 0, count);
 	}
 
 	/**
@@ -338,13 +359,14 @@ public final class DalQueryDao {
 	 */
 	public <T> List<T> queryFrom(String sql, StatementParameters parameters, DalHints hints, Class<T> clazz, int start, int count) throws SQLException {
 		hints.set(DalHintEnum.resultSetType, ResultSet.TYPE_SCROLL_INSENSITIVE);
-		return queryRange(sql, parameters, hints, new DalObjectRowMapper<T>(), start, count);
+		return queryRange(sql, parameters, hints, getMapper(clazz), start, count);
 	}
 	
 	/**
 	 * Update with FreeUpdateSqlBuilder. The builder contains sql template. If there is IN (?) clause, the number of "?" should be 1.
 	 * The system will check how many values for the in parameter and compile correct ? for the final sql.
-	 * This method is mainly used with Code Generator
+	 * This method is mainly used with Code Generator which builder and paramteres are provided separately.
+	 * 
 	 * @param builder
 	 * @param parameters
 	 * @param hints
@@ -352,9 +374,23 @@ public final class DalQueryDao {
 	 * @throws SQLException
 	 */
 	public int update(FreeUpdateSqlBuilder builder, StatementParameters parameters, DalHints hints) throws SQLException {
-		return getSafeResult((Integer)executor.execute(hints, new DalSqlTaskRequest<>(logicDbName, builder.with(parameters), hints, new FreeSqlUpdateTask(), new ResultMerger.IntSummary())));
+		return update((FreeUpdateSqlBuilder)builder.with(parameters), hints);
 	}
 	
+    /**
+     * Update with FreeUpdateSqlBuilder. The builder contains sql template. If there is IN (?) clause, the number of "?" should be 1.
+     * The system will check how many values for the in parameter and compile correct ? for the final sql.
+     * 
+     * This method is recommended if you use builder build the parameters with SQL
+     * 
+     * @param builder
+     * @return affected rows
+     * @throws SQLException
+     */
+    public int update(FreeUpdateSqlBuilder builder, DalHints hints) throws SQLException {
+        return getSafeResult((Integer)executor.execute(hints, new DalSqlTaskRequest<>(logicDbName, builder.setLogicDbName(logicDbName).setHints(hints), hints, new FreeSqlUpdateTask(), new ResultMerger.IntSummary())));
+    }
+    
 	private int getSafeResult(Integer value) {
 		if(value == null)
 			return 0;
@@ -363,51 +399,25 @@ public final class DalQueryDao {
 	
 	private <T> T queryForObject(String sql, StatementParameters parameters, DalHints hints, DalRowMapper<T> mapper, boolean nullable) 
 			throws SQLException {
-		ResultMerger<T> defaultMerger = new DalSingleResultMerger<>();
-		return commonQuery(sql, parameters, hints, new DalSingleResultExtractor<T>(mapper, true), defaultMerger, nullable);
+		return query(new FreeSelectSqlBuilder<T>().setTemplate(sql).mapWith(mapper).requireSingle().setNullable(nullable), parameters, hints);
 	}
 
 	private <T> T queryFirst(String sql, StatementParameters parameters, DalHints hints, DalRowMapper<T> mapper, boolean nullable) 
 			throws SQLException {
-		ResultMerger<T> defaultMerger = new DalFirstResultMerger<>((Comparator<T>)hints.getSorter());
-		return commonQuery(sql, parameters, hints, new DalSingleResultExtractor<T>(mapper, false), defaultMerger, nullable);
-	}
-
-	private <T> List<T> queryList(String sql, StatementParameters parameters, DalHints hints, DalResultSetExtractor<List<T>> extractor) 
-			throws SQLException {
-		ResultMerger<List<T>> defaultMerger = new DalListMerger<>((Comparator<T>)hints.getSorter());
-		return commonQuery(sql, parameters, hints, extractor, defaultMerger, NULLABLE);
+		return query(new FreeSelectSqlBuilder<T>().setTemplate(sql).mapWith(mapper).requireFirst().setNullable(nullable), parameters, hints);
 	}
 	
 	private <T> List<T> queryRange(String sql, StatementParameters parameters, DalHints hints, DalRowMapper<T> mapper, int start, int count) 
 			throws SQLException {
-		ResultMerger<List<T>> defaultMerger;
-		DalRowMapperExtractor<T> extractor;
+		FreeSelectSqlBuilder<List<T>> builder = new FreeSelectSqlBuilder<List<T>>().setTemplate(sql).mapWith(mapper);
 		
 		if(hints.isAllShards() || hints.isInShards()) {
-			defaultMerger = new DalRangedResultMerger<>((Comparator<T>)hints.getSorter(), start, count);
-			extractor = new DalRowMapperExtractor<T>(mapper);
+			builder.mergerWith(new DalRangedResultMerger<>((Comparator<T>)hints.getSorter(), start, count));
+			builder.extractorWith(new DalRowMapperExtractor<T>(mapper));
 		} else {
-			defaultMerger = null;// No need for non cross shard operation
-			extractor = new DalRowMapperExtractor<T>(mapper, start, count);
+			builder.extractorWith(new DalRowMapperExtractor<T>(mapper, start, count));
 		}
-		
-		return commonQuery(sql, parameters, hints, extractor, defaultMerger, NULLABLE);
-	}
 
-	private <T> T commonQuery(
-			String sql, StatementParameters parameters, 
-			DalHints hints, DalResultSetExtractor<T> extractor,
-			ResultMerger<T> defaultMerger,
-			boolean nullable) throws SQLException {
-		ResultMerger<T> merger = hints.is(DalHintEnum.resultMerger) ?
-					(ResultMerger<T>)hints.get(DalHintEnum.resultMerger) : 
-					defaultMerger;
-		
-		DalSqlTaskRequest<T> request = new DalSqlTaskRequest<>(
-				logicDbName, sql, parameters, hints, 
-				new QuerySqlTask<>(extractor), merger);
-		
-		return executor.execute(hints, request, nullable);
-	}
+		return query(builder, parameters, hints);
+	}	
 }

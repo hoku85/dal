@@ -144,9 +144,10 @@
             $("#groupmanagejsp").addClass("active");
         } else if (href.indexOf("usermanage") != -1) {
             $("#usermanagejsp").addClass("active");
-        } else if (href.indexOf("welcome") != -1) {
-            $("#welcomejsp").addClass("active");
-        } else {
+        } else if (href.indexOf("tool") != -1) {
+            $("#tooljsp").addClass("active");
+        }
+        else {
             $("#indexjsp").addClass("active");
         }
 

@@ -3,14 +3,21 @@
 ##实体类型并且返回值为List
 #if($method.isReturnList() && !$method.isSampleType())
 
+    /**
+	 * ${method.getComments()}
+	 */
+	public List<${method.getPojoClassName()}> ${method.getName()}(${method.getParameterDeclarationWithoutHints()}) throws SQLException {
+		return ${method.getName()}(${method.getActualParameter()});
+	}
+
 	/**
 	 * ${method.getComments()}
-	**/
+	 */
 	public List<${method.getPojoClassName()}> ${method.getName()}(${method.getParameterDeclaration()}) throws SQLException {
 		hints = DalHints.createIfAbsent(hints);
 #parse("templates/java/Hints.java.tpl")
 
-		FreeSelectSqlBuilder<List<${method.getPojoClassName()}>> builder = new FreeSelectSqlBuilder<>(dbCategory);
+		FreeSelectSqlBuilder<List<${method.getPojoClassName()}>> builder = new FreeSelectSqlBuilder<>();
 		builder.setTemplate("${method.getSql()}");
 		StatementParameters parameters = new StatementParameters();
 #if($method.hasParameters())

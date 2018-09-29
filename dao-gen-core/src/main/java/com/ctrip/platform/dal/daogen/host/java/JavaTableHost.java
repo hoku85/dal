@@ -3,9 +3,10 @@ package com.ctrip.platform.dal.daogen.host.java;
 import com.ctrip.platform.dal.daogen.enums.DatabaseCategory;
 import org.apache.commons.lang.StringUtils;
 
+import java.math.BigInteger;
 import java.util.*;
 
-public class JavaTableHost {
+public class JavaTableHost extends PojoInfo {
     private DatabaseCategory databaseCategory;
     private String packageName;
     private String dbSetName;
@@ -20,8 +21,8 @@ public class JavaTableHost {
     private SpOperationHost SpDelete;
     private SpOperationHost SpUpdate;
     private List<JavaMethodHost> methods = new ArrayList<>();
-
     private String api_list;
+    // private boolean length;
 
     public boolean generateAPI(Integer... apiID) {
         if (api_list == null || api_list.isEmpty()) {
@@ -174,7 +175,9 @@ public class JavaTableHost {
     }
 
     public boolean isIntegerPk() {
-        return primaryKeys.size() == 1 && (primaryKeys.get(0).getJavaClass().equals(Integer.class) || primaryKeys.get(0).getJavaClass().equals(Long.class));
+        Class<?> clazz = primaryKeys.get(0).getJavaClass();
+        return primaryKeys.size() == 1
+                && (clazz.equals(Integer.class) || clazz.equals(Long.class) || clazz.equals(BigInteger.class));
     }
 
     public String pageBegain() {
@@ -196,9 +199,27 @@ public class JavaTableHost {
     public String getPkParameterDeclaration() {
         List<String> paramsDeclaration = new ArrayList<>();
         for (JavaParameterHost parameter : primaryKeys) {
-            paramsDeclaration.add(String.format("%s %s", parameter.getClassDisplayName(), parameter.getUncapitalizedName()));
+            paramsDeclaration.add(
+                    String.format("%s %s", parameter.getClassDisplayName(), parameter.getCamelCaseUncapitalizedName()));
         }
         paramsDeclaration.add(String.format("%s %s", "DalHints", "hints"));
+        return StringUtils.join(paramsDeclaration, ", ");
+    }
+
+    public String getPkParameterDeclarationWithoutHints() {
+        List<String> paramsDeclaration = new ArrayList<>();
+        for (JavaParameterHost parameter : primaryKeys) {
+            paramsDeclaration.add(
+                    String.format("%s %s", parameter.getClassDisplayName(), parameter.getCamelCaseUncapitalizedName()));
+        }
+        return StringUtils.join(paramsDeclaration, ", ");
+    }
+
+    public String getPkParameters() {
+        List<String> paramsDeclaration = new ArrayList<>();
+        for (JavaParameterHost parameter : primaryKeys) {
+            paramsDeclaration.add(parameter.getCamelCaseUncapitalizedName());
+        }
         return StringUtils.join(paramsDeclaration, ", ");
     }
 
@@ -238,16 +259,18 @@ public class JavaTableHost {
             allTypes.addAll(SpUpdate.getParameters());
 
         for (JavaParameterHost field : allTypes) {
-//            if (null != field.getDirection() && (field.getDirection().name().equals("InputOutput") || field.getDirection().name().equals("InputOutput")))
-//                imports.add(com.ctrip.platform.dal.daogen.enums.ParameterDirection.class.getName());
-            Class<?> clazz = field.getJavaClass();
-            if (byte[].class.equals(clazz))
-                continue;
-            if (null == clazz)
-                continue;
-            if (clazz.getPackage().getName().equals(String.class.getPackage().getName()))
-                continue;
-            imports.add(clazz.getName());
+            try {
+                Class<?> clazz = field.getJavaClass();
+                if (byte[].class.equals(clazz))
+                    continue;
+                if (null == clazz)
+                    continue;
+                if (clazz.getPackage().getName().equals(String.class.getPackage().getName()))
+                    continue;
+                imports.add(clazz.getName());
+            } catch (Throwable e) {
+                throw e;
+            }
         }
 
         return imports;
@@ -310,4 +333,13 @@ public class JavaTableHost {
     public boolean isSampleType() {
         return null != this.fields && this.fields.size() == 1;
     }
+
+    // public boolean getLength() {
+    // return length;
+    // }
+    //
+    // public void setLength(boolean length) {
+    // this.length = length;
+    // }
+
 }

@@ -1,11 +1,16 @@
-package ${host.getPackageName()};
+package ${host.getPackageName()}.dao;
 
 #foreach( $field in ${host.getDaoImports()} )
 import ${field};
 #end
+import ${host.getPackageName()}.entity.${host.getPojoClassName()};
 
 import com.ctrip.platform.dal.dao.helper.DalDefaultJpaParser;
 
+/**
+ * @author ${host.getUserName()}
+ * @date ${host.getDate()}
+ */
 public class ${host.getPojoClassName()}Dao {
 	private static final boolean ASC = true;
 	private DalTableDao<${host.getPojoClassName()}> client;

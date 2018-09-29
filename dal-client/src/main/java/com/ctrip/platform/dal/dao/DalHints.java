@@ -1,7 +1,10 @@
 package com.ctrip.platform.dal.dao;
 
+import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -88,8 +91,9 @@ public class DalHints {
 		return (DalHA)hints.get(DalHintEnum.heighAvaliable);
 	}
 	
-	public void setHA(DalHA ha){
+	public DalHints setHA(DalHA ha){
 		hints.put(DalHintEnum.heighAvaliable, ha);
+		return this;
 	}
 	
 	public Integer getInt(DalHintEnum hint, int defaultValue) {
@@ -114,8 +118,8 @@ public class DalHints {
 		return value.toString();
 	}
 
-	public String[] getStrings(DalHintEnum hint) {
-		return (String[])hints.get(hint);
+	public Set<String> getStringSet(DalHintEnum hint) {
+		return (Set<String>)hints.get(hint);
 	}
 	
 	public DalHints set(DalHintEnum hint) {
@@ -135,6 +139,17 @@ public class DalHints {
 		hints.put(hint, value);
 		return this;
 	}
+
+	/**
+	 * Specify which db to execute the operation
+	 *
+	 * @param databaseName the connectionString part of the dal.xml/config
+	 * @return
+	 */
+	public DalHints inDatabase(String databaseName) {
+		hints.put(DalHintEnum.designatedDatabase, databaseName);
+		return this;
+	}	
 
 	public DalHints inShard(String shardId) {
 		hints.put(DalHintEnum.shard, shardId);
@@ -256,14 +271,16 @@ public class DalHints {
 
 	public DalHints masterOnly() {
 		set(DalHintEnum.masterOnly, true);
+		hints.remove(DalHintEnum.slaveOnly);
 		return this;
 	}
 
-	public DalHints slaveOnly() {
-		set(DalHintEnum.masterOnly, false);
-		return this;
-	}
-	
+    public DalHints slaveOnly() {
+        set(DalHintEnum.slaveOnly, true);
+        hints.remove(DalHintEnum.masterOnly);
+        return this;
+    }
+
 	public DalHints continueOnError() {
 		set(DalHintEnum.continueOnError);
 		return this;
@@ -323,7 +340,10 @@ public class DalHints {
 		return !is(DalHintEnum.continueOnError);
 	}
 
-	public void handleError(String msg, Throwable e) throws DalException {
+	public void handleError(String msg, Throwable e) throws SQLException {
+	    if(e == null)
+	        return;
+
 		// Just make sure error is not swallowed by us
 		DalClientFactory.getDalLogger().error(msg, e);
 
@@ -336,9 +356,19 @@ public class DalHints {
 		return this;
 	}
 	
+	public DalHints forceAutoCommit() {
+		set(DalHintEnum.forceAutoCommit);
+		return this;
+	}
+	
 	public DalHints timeout(int seconds) {
 		set(DalHintEnum.timeout, seconds);
 		return this;
+	}
+	
+	public DalHints freshness(int seconds) {
+        set(DalHintEnum.freshness, seconds);
+        return this;
 	}
 	
 	public DalHints enableIdentityInsert() {
@@ -346,7 +376,91 @@ public class DalHints {
 		return this;
 	}
 
+    public DalHints setIdentityBack() {
+        set(DalHintEnum.setIdentityBack);
+        return this;
+    }
+
 	public boolean isIdentityInsertDisabled() {
 		return !is(DalHintEnum.enableIdentityInsert);
 	}
+	
+	public DalHints updateNullField() {
+		set(DalHintEnum.updateNullField);
+		return this;
+	}
+	
+	public boolean isUpdateNullField() {
+		return is(DalHintEnum.updateNullField);
+	}
+	
+	public DalHints updateUnchangedField() {
+		set(DalHintEnum.updateUnchangedField);
+		return this;
+	}
+
+	public boolean isUpdateUnchangedField() {
+		return is(DalHintEnum.updateUnchangedField);
+	}
+		
+	public DalHints insertNullField() {
+		set(DalHintEnum.insertNullField);
+		return this;
+	}
+	
+	public boolean isInsertNullField() {
+		return is(DalHintEnum.insertNullField);
+	}
+	
+	public DalHints retrieveAllResultsFromSp() {
+		return set(DalHintEnum.retrieveAllSpResults);
+	}
+	
+	public DalHints include(Set<String> columns) {
+		return set(DalHintEnum.includedColumns, columns);
+	}
+
+	public DalHints exclude(Set<String> columns) {
+		return set(DalHintEnum.excludedColumns, columns);
+	}
+
+	public DalHints include(String... columns) {
+		return set(DalHintEnum.includedColumns, new HashSet<>(Arrays.asList(columns)));
+	}
+
+	public DalHints exclude(String... columns) {
+		return set(DalHintEnum.excludedColumns, new HashSet<>(Arrays.asList(columns)));
+	}
+
+	public Set<String> getIncluded() {
+		return getStringSet(DalHintEnum.includedColumns);
+	}
+
+	public Set<String> getExcluded() {
+		return getStringSet(DalHintEnum.excludedColumns);
+	}
+	
+	public DalHints ignoreMissingFields() {
+		return set(DalHintEnum.ignoreMissingFields, true);
+	}
+	
+	public DalHints partialQuery(Set<String> columns) {
+		return set(DalHintEnum.partialQuery, columns);
+	}
+	
+	public DalHints partialQuery(String... columns) {
+		return set(DalHintEnum.partialQuery, new HashSet<>(Arrays.asList(columns)));
+	}
+	
+	public String[] getPartialQueryColumns() {
+		return getStringSet(DalHintEnum.partialQuery).toArray(new String[getStringSet(DalHintEnum.partialQuery).size()]);
+	}
+	
+	public DalHints allowPartial() {
+	    return set(DalHintEnum.allowPartial);
+    }
+
+    public DalHints selectByNames() {
+        return set(DalHintEnum.selectByNames);
+    }
 }

@@ -3,20 +3,15 @@ package com.ctrip.platform.dal.dao.configure;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import com.ctrip.platform.dal.common.enums.DatabaseCategory;
-import com.ctrip.platform.dal.dao.client.DalHA;
-import com.ctrip.platform.dal.dao.client.DalLogger;
 import com.ctrip.platform.dal.dao.strategy.DalShardingStrategy;
-import com.ctrip.platform.dal.exceptions.DalException;
 
 public class DatabaseSet {
-	public static final String SQL_PROVIDER = "sqlProvider";
-	public static final String MYSQL_PROVIDER = "mySqlProvider";
-
 	private static final String CLASS = "class";
 	private static final String ENTRY_SEPARATOR = ";";
 	private static final String KEY_VALUE_SEPARATOR = "=";
@@ -33,7 +28,6 @@ public class DatabaseSet {
 
 	private List<DataBase> masterDbs = new ArrayList<DataBase>();
 	private List<DataBase> slaveDbs = new ArrayList<DataBase>();
-	private DalLogger logger;
 	
 	/**
 	 * The target DB set does not support shard
@@ -42,36 +36,18 @@ public class DatabaseSet {
 	 * @param databases
 	 * @throws Exception
 	 */
-	public DatabaseSet(String name, String provider, Map<String, DataBase> databases, DalLogger logger) throws Exception {
-		this(name, provider, null, databases, logger);
+	public DatabaseSet(String name, String provider, Map<String, DataBase> databases) throws Exception {
+		this(name, provider, null, databases);
 	}
 	
-	public DatabaseSet(String name, String provider, String shardStrategy, Map<String, DataBase> databases, DalLogger logger) throws Exception {
+	public DatabaseSet(String name, String provider, String shardStrategy, Map<String, DataBase> databases) throws Exception {
 		this.name = name;
 		this.provider = provider;
-		initDbCategory();
+		dbCategory = DatabaseCategory.matchWith(provider);
 		this.databases = databases;
-		this.logger = logger;
 
 		initStrategy(shardStrategy);
 		initShards();
-	}
-	
-	private void initDbCategory() {
-		if(provider == null)
-			throw new RuntimeException("The provider is NULL in Dal.config for databaseSet:" + name);
-		
-		if(provider.equals(SQL_PROVIDER)) {
-			dbCategory = DatabaseCategory.SqlServer;
-			return;
-		}
-		
-		if(provider.equals(MYSQL_PROVIDER)) {
-			dbCategory = DatabaseCategory.MySql;
-			return;
-		}
-		
-		throw new RuntimeException("The provider: " + provider + " is not recoganized in Dal.config for databaseSet:" + name);
 	}
 	
 	private void initStrategy(String shardStrategy) throws Exception {
@@ -81,12 +57,12 @@ public class DatabaseSet {
 		String[] values = shardStrategy.split(ENTRY_SEPARATOR);
 		String[] strategyDef = values[0].split(KEY_VALUE_SEPARATOR);
 		
-		if(strategyDef[0].equals(CLASS))
-			strategy = (DalShardingStrategy)Class.forName(strategyDef[1]).newInstance();
+		if(strategyDef[0].trim().equals(CLASS))
+			strategy = (DalShardingStrategy)Class.forName(strategyDef[1].trim()).newInstance();
 		Map<String, String> settings = new HashMap<String, String>();
 		for(int i = 1; i < values.length; i++) {
 			String[] entry = values[i].split(KEY_VALUE_SEPARATOR);
-			settings.put(entry[0], entry[1]);
+			settings.put(entry[0].trim(), entry[1].trim());
 		}
 		strategy.initialize(settings);
 	}
@@ -137,7 +113,7 @@ public class DatabaseSet {
 	}
 
 	public Map<String, DataBase> getDatabases() {
-		return databases;
+		return new HashMap<>(databases);
 	}
 	
 	public void validate(String shard) throws SQLException {
@@ -146,7 +122,7 @@ public class DatabaseSet {
 	}
 	
 	public Set<String> getAllShards() {
-		return masterDbByShard.keySet();
+		return new HashSet<>(masterDbByShard.keySet());
 	}
 
 	public DalShardingStrategy getStrategy() throws SQLException {
@@ -155,23 +131,19 @@ public class DatabaseSet {
 		return strategy;
 	}
 	
+    public List<DataBase> getMasterDbs() {
+        return masterDbs == null ? null : new ArrayList<>(masterDbs);
+    }
+
+    public List<DataBase> getSlaveDbs() {
+        return slaveDbs == null ? null : new ArrayList<>(slaveDbs);
+    }
+    
 	public List<DataBase> getMasterDbs(String shard) {
-		return masterDbByShard.get(shard);
+		return masterDbByShard.containsKey(shard) ? new ArrayList<>(masterDbByShard.get(shard)) : null;
 	}
 
 	public List<DataBase> getSlaveDbs(String shard) {
-		return slaveDbByShard.get(shard);
-	}
-	
-	public String getRandomRealDbName(DalHA ha, String shard, boolean isMaster, boolean isSelect) throws DalException {
-		return getRandomRealDbName(ha, isMaster, isSelect, getMasterDbs(shard), getSlaveDbs(shard));
-	}
-	
-	public String getRandomRealDbName(DalHA ha, boolean isMaster, boolean isSelect) throws DalException {
-		return getRandomRealDbName(ha, isMaster, isSelect, masterDbs, slaveDbs);
-	}
-	
-	private String getRandomRealDbName(DalHA ha, boolean isMaster, boolean isSelect, List<DataBase> masterCandidates, List<DataBase> slaveCandidates) throws DalException {
-		return new DatabaseSelector(ha, masterCandidates, slaveCandidates, isMaster, isSelect).select();
+	    return slaveDbByShard.containsKey(shard) ? new ArrayList<>(slaveDbByShard.get(shard)) : null;
 	}
 }

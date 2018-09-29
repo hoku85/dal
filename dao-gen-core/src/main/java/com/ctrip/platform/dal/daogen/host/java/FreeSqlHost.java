@@ -7,13 +7,15 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
-public class FreeSqlHost {
+public class FreeSqlHost extends PojoInfo {
     private String packageName;
     private String dbSetName;
     private String className;
     private List<JavaMethodHost> methods = new ArrayList<>();
     private List<JavaParameterHost> fields;
     private DatabaseCategory databaseCategory;
+    private boolean length;
+    private String projectName;
 
     public Set<String> getDaoImports() {
         Set<String> imports = new TreeSet<>();
@@ -68,41 +70,10 @@ public class FreeSqlHost {
 
     public String pageBegain() {
         return "(pageNo - 1) * pageSize";
-        /*
-         * if (this.databaseCategory == DatabaseCategory.MySql) { return
-		 * "(pageNo - 1) * pageSize"; } else { return
-		 * "(pageNo - 1) * pageSize + 1"; }
-		 */
     }
 
     public String pageEnd() {
         return "pageSize";
-        /*
-         * if (this.databaseCategory == DatabaseCategory.MySql) { return
-		 * "pageSize"; } else { return "pageSize * pageNo"; }
-		 */
-    }
-
-    public boolean hasQuery() {
-        boolean hasQuery = false;
-        for (JavaMethodHost mtd : this.methods) {
-            if (mtd.isQuery()) {
-                hasQuery = true;
-                break;
-            }
-        }
-        return hasQuery;
-    }
-
-    public boolean hasUpdate() {
-        boolean hasUpdate = false;
-        for (JavaMethodHost mtd : this.methods) {
-            if (mtd.isUpdate()) {
-                hasUpdate = true;
-                break;
-            }
-        }
-        return hasUpdate;
     }
 
     public List<JavaParameterHost> getFields() {
@@ -153,4 +124,19 @@ public class FreeSqlHost {
         this.databaseCategory = databaseCategory;
     }
 
+    public boolean isLength() {
+        return length;
+    }
+
+    public void setLength(boolean length) {
+        this.length = length;
+    }
+
+    public String getProjectName() {
+        return projectName;
+    }
+
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
+    }
 }

@@ -1,27 +1,29 @@
 package com.ctrip.platform.dal.daogen.host.csharp;
 
 import com.ctrip.platform.dal.daogen.enums.ConditionType;
+import com.ctrip.platform.dal.daogen.enums.DatabaseCategory;
 import com.ctrip.platform.dal.daogen.enums.DbType;
 import com.ctrip.platform.dal.daogen.enums.ParameterDirection;
 import com.ctrip.platform.dal.daogen.host.AbstractParameterHost;
 
-public class CSharpParameterHost extends AbstractParameterHost implements Comparable<CSharpParameterHost> {
+import java.sql.Types;
 
+public class CSharpParameterHost extends AbstractParameterHost implements Comparable<CSharpParameterHost> {
     private String name;
 
     private String comment;
 
     private String alias;
 
-    //where条件是否是in,如 select * from Person where id in ?
+    // where条件是否是in,如 select * from Person where id in ?
     private boolean inParameter;
 
     private ParameterDirection direction;
 
-    //C#的DbType
+    // C#的DbType
     private DbType dbType;
 
-    //C#的数据类型
+    // C#的数据类型
     private String type;
 
     private boolean identity;
@@ -34,11 +36,17 @@ public class CSharpParameterHost extends AbstractParameterHost implements Compar
 
     private ConditionType conditionType;
 
-    //sql语句中以@开头的参数名称
+    // sql语句中以@开头的参数名称
     private String sqlParamName;
 
-    public CSharpParameterHost() {
-    }
+    // 列的默认值
+    private String defaultValue;
+
+    private DatabaseCategory dbCategory;
+
+    private int dataType;
+
+    public CSharpParameterHost() {}
 
     public CSharpParameterHost(CSharpParameterHost host) {
         this.name = host.getName();
@@ -52,6 +60,9 @@ public class CSharpParameterHost extends AbstractParameterHost implements Compar
         this.nullable = host.isNullable();
         this.valueType = host.isValueType();
         this.comment = host.getComment();
+        this.defaultValue = host.getDefaultValue();
+        this.dbCategory = host.getDbCategory();
+        this.dataType = host.getDataType();
     }
 
     public ConditionType getConditionType() {
@@ -191,14 +202,67 @@ public class CSharpParameterHost extends AbstractParameterHost implements Compar
         this.sqlParamName = sqlParamName;
     }
 
+    public String getDefaultValue() {
+        return defaultValue;
+    }
+
+    public void setDefaultValue(String defaultValue) {
+        this.defaultValue = defaultValue;
+    }
+
+    public DatabaseCategory getDbCategory() {
+        return dbCategory;
+    }
+
+    public void setDbCategory(DatabaseCategory dbCategory) {
+        this.dbCategory = dbCategory;
+    }
+
+    public int getDataType() {
+        return dataType;
+    }
+
+    public void setDataType(int dataType) {
+        this.dataType = dataType;
+    }
+
+    public boolean isDataChangeLastTimeField() {
+        boolean result = true;
+        result &= isMySql();
+        result &= isDataChangeLastTime();
+        result &= isTimestampType();
+        result &= isDefaultValueDefined();
+        return result;
+    }
+
+    private boolean isDataChangeLastTime() {
+        return name.toUpperCase().equals(DATACHANGE_LASTTIME);
+    }
+
+    private boolean isTimestampType() {
+        return dataType == Types.TIMESTAMP;
+    }
+
+    private boolean isMySql() {
+        return dbCategory == DatabaseCategory.MySql;
+    }
+
+    private boolean isDefaultValueDefined() {
+        return defaultValue != null;
+    }
+
     @Override
     public String toString() {
-        return this.getName().toString();
+        String n = getName();
+        return n.equals(null) ? "" : n.toString();
     }
 
     @Override
     public int compareTo(CSharpParameterHost o) {
-        return this.getName().toLowerCase().compareTo(o.getName().toLowerCase());
+        String n = getName();
+        if (n.equals(null))
+            n = "";
+        return n.toLowerCase().compareTo(o.getName().toLowerCase());
     }
 
 }

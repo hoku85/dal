@@ -49,8 +49,15 @@ public enum DalHintEnum {
 	 */
 	parameters,
 	
+	/**
+	 * Explicitly indicate in which database the operation will be performed.
+	 * This is because a logic Db can include multiple physical  Db. So sometimes we need to select the certain Db
+	 * Value should be String
+	 */
+	designatedDatabase,
+	
 	/*
-	 * Explicitly indicate which shard the operation will be performed.
+	 * Explicitly indicate in which shard the operation will be performed.
 	 * Value should be String
 	 */
 	shard,
@@ -98,6 +105,13 @@ public enum DalHintEnum {
 	 */
 	timeout,
 	
+	/**
+	 * Specify how many seconds the slave is behind master. Dal framework does not use it directly.
+	 * User can customize DatabaseSelector in order to use it
+	 *  
+	 */
+	freshness,
+	
 	/* 
 	 * resultSetType a result set type; one of
      *         <code>ResultSet.TYPE_FORWARD_ONLY</code>,
@@ -124,7 +138,10 @@ public enum DalHintEnum {
 	 */
 	skipResultsProcessing,
 	
-//	skipUndeclaredResults,
+	/*
+	 * Auto processing all result set and update count
+	 */
+	retrieveAllSpResults,
 	
 	/* 
 	 * Parameter for statement.setMaxRows(maxRows); 
@@ -143,6 +160,11 @@ public enum DalHintEnum {
 	 */
 	masterOnly, 
 	
+    /* 
+     * Indicate using slave database even the operation is not a query 
+     */
+    slaveOnly,
+    
 	heighAvaliable,
 	
 	/* 
@@ -161,9 +183,19 @@ public enum DalHintEnum {
 	isolationLevel,
 	
 	/*
+	 * used in DalTableDao, when set the insert field can be null value.
+	 */
+	insertNullField,
+	
+	/*
 	 * used in DalTableDao, when set the update field can be null value.
 	 */
 	updateNullField,
+	
+	/*
+	 * used in DalTableDao, when set the update field can be unchanged value after select from DB.
+	 */
+	updateUnchangedField,
 	
 	/**
 	 * Indicate the cud operation will async execute
@@ -190,8 +222,40 @@ public enum DalHintEnum {
 	 */
 	enableIdentityInsert,
 	
+    /**
+     * Set generated incremental id back to the original pojo
+     */
+    setIdentityBack,
+    
 	/**
-	 * cloumn names that will be excluded for CUD
+	 * Columns that will be excluded for update
 	 */
 	excludedColumns,
+	
+	/**
+	 * Columns that will be included for update
+	 */
+	includedColumns,
+	
+	/**
+	 * If it is OK to allow some column not defined in pojo
+	 */
+	ignoreMissingFields,
+	
+	/**
+	 * Columns that will be included for query
+	 */
+	partialQuery,
+	
+	/**
+     * Allow columns in result set do not match columns declared in entity.
+     * It will populate the common set of columns from result set and entity columns.
+     * It request extractor or mapper to be HintsAwareExtractor or HintsAareMapper to do the required work
+     */
+    allowPartial,
+    
+    /**
+     * when select all columns, use column names instead of *
+     */
+    selectByNames,
 }

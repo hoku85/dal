@@ -9,7 +9,7 @@ import org.apache.commons.lang.WordUtils;
 
 import java.util.*;
 
-public class JavaMethodHost {
+public class JavaMethodHost extends PojoInfo {
     private String crud_type;
     private String name;
     private String sql;
@@ -48,6 +48,7 @@ public class JavaMethodHost {
     private String shards = "shards";
     private String async = "async";
     private String callback = "callback";
+    // private boolean length;
 
     public String getOrderByExp() {
         return orderByExp;
@@ -236,7 +237,8 @@ public class JavaMethodHost {
         for (JavaParameterHost parameter : parameters) {
             ConditionType conditionType = parameter.getConditionType();
             if (ConditionType.In == conditionType) {
-                paramsDeclaration.add(String.format("List<%s> %s", parameter.getClassDisplayName(), parameter.getAlias()));
+                paramsDeclaration
+                        .add(String.format("List<%s> %s", parameter.getClassDisplayName(), parameter.getAlias()));
                 this.inClauses.add(parameter.getAlias());
             } else if (isExcludedParameter(conditionType)) {
                 continue;
@@ -256,6 +258,57 @@ public class JavaMethodHost {
         }
         if (isCallback()) {
             paramsDeclaration.add("DalResultCallback callback");
+        }
+        return StringUtils.join(paramsDeclaration, ", ");
+    }
+
+    public String getParameterDeclarationWithoutHints() {
+        List<String> paramsDeclaration = new ArrayList<>();
+        for (JavaParameterHost parameter : parameters) {
+            ConditionType conditionType = parameter.getConditionType();
+            if (ConditionType.In == conditionType) {
+                paramsDeclaration
+                        .add(String.format("List<%s> %s", parameter.getClassDisplayName(), parameter.getAlias()));
+                this.inClauses.add(parameter.getAlias());
+            } else if (isExcludedParameter(conditionType)) {
+                continue;
+            } else {
+                paramsDeclaration.add(String.format("%s %s", parameter.getClassDisplayName(), parameter.getAlias()));
+            }
+        }
+        if (this.paging && this.crud_type.equalsIgnoreCase("select")) {
+            paramsDeclaration.add("int pageNo");
+            paramsDeclaration.add("int pageSize");
+        }
+
+        return StringUtils.join(paramsDeclaration, ", ");
+    }
+
+    public String getActualParameter() {
+        List<String> paramsDeclaration = new ArrayList<>();
+        for (JavaParameterHost parameter : parameters) {
+            ConditionType conditionType = parameter.getConditionType();
+            if (ConditionType.In == conditionType) {
+                paramsDeclaration.add(parameter.getAlias());
+                this.inClauses.add(parameter.getAlias());
+            } else if (isExcludedParameter(conditionType)) {
+                continue;
+            } else {
+                paramsDeclaration.add(parameter.getAlias());
+            }
+        }
+        if (this.paging && this.crud_type.equalsIgnoreCase("select")) {
+            paramsDeclaration.add("pageNo");
+            paramsDeclaration.add("pageSize");
+        }
+
+        paramsDeclaration.add("null");
+
+        if (isShards()) {
+            paramsDeclaration.add("null");
+        }
+        if (isCallback()) {
+            paramsDeclaration.add("null");
         }
         return StringUtils.join(paramsDeclaration, ", ");
     }
@@ -280,7 +333,8 @@ public class JavaMethodHost {
         List<String> paramsDeclaration = new ArrayList<>();
         for (JavaParameterHost parameter : updateSetParameters) {
             if (ConditionType.In == parameter.getConditionType()) {
-                paramsDeclaration.add(String.format("List<%s> %s", parameter.getClassDisplayName(), parameter.getAlias()));
+                paramsDeclaration
+                        .add(String.format("List<%s> %s", parameter.getClassDisplayName(), parameter.getAlias()));
                 this.inClauses.add(parameter.getAlias());
             } else {
                 paramsDeclaration.add(String.format("%s %s", parameter.getClassDisplayName(), parameter.getAlias()));
@@ -289,7 +343,8 @@ public class JavaMethodHost {
         for (JavaParameterHost parameter : parameters) {
             ConditionType conditionType = parameter.getConditionType();
             if (conditionType == ConditionType.In) {
-                paramsDeclaration.add(String.format("List<%s> %s", parameter.getClassDisplayName(), parameter.getAlias()));
+                paramsDeclaration
+                        .add(String.format("List<%s> %s", parameter.getClassDisplayName(), parameter.getAlias()));
                 this.inClauses.add(parameter.getAlias());
             } else if (isExcludedParameter(conditionType)) {
                 continue;
@@ -304,6 +359,65 @@ public class JavaMethodHost {
         }
         if (isCallback()) {
             paramsDeclaration.add("DalResultCallback callback");
+        }
+        return StringUtils.join(paramsDeclaration, ", ");
+    }
+
+    public String getUpdateParameterDeclarationWithoutHints() {
+        List<String> paramsDeclaration = new ArrayList<>();
+        for (JavaParameterHost parameter : updateSetParameters) {
+            if (ConditionType.In == parameter.getConditionType()) {
+                paramsDeclaration
+                        .add(String.format("List<%s> %s", parameter.getClassDisplayName(), parameter.getAlias()));
+                this.inClauses.add(parameter.getAlias());
+            } else {
+                paramsDeclaration.add(String.format("%s %s", parameter.getClassDisplayName(), parameter.getAlias()));
+            }
+        }
+        for (JavaParameterHost parameter : parameters) {
+            ConditionType conditionType = parameter.getConditionType();
+            if (conditionType == ConditionType.In) {
+                paramsDeclaration
+                        .add(String.format("List<%s> %s", parameter.getClassDisplayName(), parameter.getAlias()));
+                this.inClauses.add(parameter.getAlias());
+            } else if (isExcludedParameter(conditionType)) {
+                continue;
+            } else {
+                paramsDeclaration.add(String.format("%s %s", parameter.getClassDisplayName(), parameter.getAlias()));
+            }
+        }
+
+        return StringUtils.join(paramsDeclaration, ", ");
+    }
+
+    public String getUpdateActualParameter() {
+        List<String> paramsDeclaration = new ArrayList<>();
+        for (JavaParameterHost parameter : updateSetParameters) {
+            if (ConditionType.In == parameter.getConditionType()) {
+                paramsDeclaration.add(parameter.getAlias());
+                this.inClauses.add(parameter.getAlias());
+            } else {
+                paramsDeclaration.add(parameter.getAlias());
+            }
+        }
+        for (JavaParameterHost parameter : parameters) {
+            ConditionType conditionType = parameter.getConditionType();
+            if (conditionType == ConditionType.In) {
+                paramsDeclaration.add(parameter.getAlias());
+                this.inClauses.add(parameter.getAlias());
+            } else if (isExcludedParameter(conditionType)) {
+                continue;
+            } else {
+                paramsDeclaration.add(parameter.getAlias());
+            }
+        }
+
+        paramsDeclaration.add("null");
+        if (isShards()) {
+            paramsDeclaration.add("null");
+        }
+        if (isCallback()) {
+            paramsDeclaration.add("null");
         }
         return StringUtils.join(paramsDeclaration, ", ");
     }
@@ -443,10 +557,20 @@ public class JavaMethodHost {
     private boolean isExcludedParameter(ConditionType conditionType) {
         boolean result = false;
         if (conditionType == ConditionType.IsNull || conditionType == ConditionType.IsNotNull
-                || conditionType == ConditionType.And || conditionType == ConditionType.Or || conditionType == ConditionType.Not
-                || conditionType == ConditionType.LeftBracket || conditionType == ConditionType.RightBracket) {
+                || conditionType == ConditionType.And || conditionType == ConditionType.Or
+                || conditionType == ConditionType.Not || conditionType == ConditionType.LeftBracket
+                || conditionType == ConditionType.RightBracket) {
             result = true;
         }
         return result;
     }
+
+    // public boolean getLength() {
+    // return length;
+    // }
+    //
+    // public void setLength(boolean length) {
+    // this.length = length;
+    // }
+
 }

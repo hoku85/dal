@@ -1,12 +1,17 @@
 package com.ctrip.platform.dal.dao.client;
 
-import java.util.HashSet;
-import java.util.Set;
-
+import com.ctrip.platform.dal.common.enums.DatabaseCategory;
 import com.ctrip.platform.dal.dao.DalEventEnum;
+import com.ctrip.platform.dal.dao.helper.DefaultTableParser;
+import com.ctrip.platform.dal.dao.helper.LoggerHelper;
+import com.ctrip.platform.dal.dao.helper.TableParser;
+
+import java.util.*;
 
 public class LogEntry {
-	private static Set<String> execludedClasses = null;
+    private static volatile ThreadLocal<String> currentCaller;
+
+	private static String execludedPackageSpace = "com.ctrip.platform.dal.dao.";
 	
 	private boolean sensitive;
 	private String[] sqls;
@@ -17,8 +22,10 @@ public class LogEntry {
 	private boolean success;
 	private boolean transactional;
 	private long duration;
+	private String logicDbName;
+	private DatabaseCategory dbCategory;
 	private String databaseName;
-	private String allInOneKey;
+	private String dataBaseKeyName;
 	private boolean isMaster;
 	private String shardId;
 	private String serverAddress;
@@ -26,30 +33,38 @@ public class LogEntry {
 	private String commandType;
 	private String userName;
 	private int resultCount;
+	private Integer affectedRows;
+	private int[] affectedRowsArray;
+	private long connectionCost;
 	private String dao;
 	private String method;
 	private String source;
 	private String clientVersion;
-
+	private Set<String> tables=new HashSet<>();
+	private static final String NOT_FOUND="NotFound";
 	private Throwable exception;
-	
-	private long createTime = System.currentTimeMillis();
-	
-	static {
-		execludedClasses = new HashSet<String>();
-		execludedClasses.add("com.ctrip.platform.dal.dao.client.ConnectionAction");
-		execludedClasses.add("com.ctrip.platform.dal.dao.client.DalConnectionManager");
-		execludedClasses.add("com.ctrip.platform.dal.dao.client.DalTransactionManager");
-		execludedClasses.add("com.ctrip.platform.dal.dao.client.DalDirectClient");
-		execludedClasses.add("com.ctrip.platform.dal.dao.DalTableDao");
-		execludedClasses.add("com.ctrip.platform.dal.dao.DalQueryDao");
-	}
+	private TableParser tableParser = new DefaultTableParser();
+	private static final String JSON_PATTERN = "{'Decode':'%s','Connect':'%s','Prepare':'%s','Excute':'%s','ClearUp':'%s'}";
+
+    /**
+     * Internal performance recorder for performance cost in each stage.
+     * As each low level DB operation will be logged once at ConnectionAction level, this recorder will
+     * be set into LogEntry which is created as soon as ConnectionAction is created.
+     */
+    private long begin;
+    private long beginConnect;
+    private long endConnect;
+    private long beginExecute;
+    private long endExecute;
+    private long end;
 	
 	public LogEntry(){
+	    begin();
+
 		StackTraceElement[] callers = Thread.currentThread().getStackTrace();
 		for (int i = 4; i < callers.length; i++) {
 			StackTraceElement caller = callers[i];
-			if (execludedClasses.contains(caller.getClassName()))
+			if (caller.getClassName().startsWith(execludedPackageSpace))
 				continue;
 			
 			dao = caller.getClassName();
@@ -144,7 +159,23 @@ public class LogEntry {
 		this.duration = duration;
 	}
 
-	public String getDatabaseName() {
+	public String getLogicDbName() {
+        return logicDbName;
+    }
+
+    public void setLogicDbName(String logicDbName) {
+        this.logicDbName = logicDbName;
+    }
+
+    public DatabaseCategory getDbCategory() {
+        return dbCategory;
+    }
+
+    public void setDbCategory(DatabaseCategory dbCategory) {
+        this.dbCategory = dbCategory;
+    }
+
+    public String getDatabaseName() {
 		return databaseName;
 	}
 
@@ -188,7 +219,33 @@ public class LogEntry {
 		this.resultCount = resultCount;
 	}
 
-	public String getCallString() {
+	public Integer getAffectedRows() {
+        return affectedRows;
+    }
+
+    public Integer setAffectedRows(Integer affectedRows) {
+        this.affectedRows = affectedRows;
+        return affectedRows;
+    }
+
+    public int[] getAffectedRowsArray() {
+        return affectedRowsArray;
+    }
+
+    public int[] setAffectedRowsArray(int[] affectedRowsArray) {
+        this.affectedRowsArray = affectedRowsArray;
+        return affectedRowsArray;
+    }
+
+    public long getConnectionCost() {
+        return connectionCost;
+    }
+
+    public void setConnectionCost(long connectionCost) {
+        this.connectionCost = connectionCost;
+    }
+
+    public String getCallString() {
 		return callString;
 	}
 
@@ -212,12 +269,12 @@ public class LogEntry {
 		return source;
 	}
 
-	public String getAllInOneKey() {
-		return allInOneKey;
+	public String getDataBaseKeyName() {
+		return dataBaseKeyName;
 	}
 
-	public void setAllInOneKey(String allInOneKey) {
-		this.allInOneKey = allInOneKey;
+	public void setDataBaseKeyName(String dataBaseKeyName) {
+		this.dataBaseKeyName = dataBaseKeyName;
 	}
 
 	public boolean isMaster() {
@@ -247,16 +304,8 @@ public class LogEntry {
 	public void setClientVersion(String clientVersion) {
 		this.clientVersion = clientVersion;
 	}
-	
-	public long getCreateTime() {
-		return createTime;
-	}
 
-	public void setCreateTime(long createTime) {
-		this.createTime = createTime;
-	}
-
-	public int getSqlSize() {
+    public int getSqlSize() {
 		int size = 0;
 		if (this.event == DalEventEnum.QUERY
 				|| this.event == DalEventEnum.UPDATE_SIMPLE
@@ -275,5 +324,114 @@ public class LogEntry {
 		}
 
 		return size;
+	}
+
+    public void begin(){
+        begin = System.currentTimeMillis();
+    }
+
+    public void beginConnect(){
+        beginConnect = System.currentTimeMillis();
+    }
+
+    public void endConnect(){
+        endConnect = System.currentTimeMillis();
+    }
+
+    public void beginExecute(){
+        beginExecute = System.currentTimeMillis();
+    }
+
+    public void endExectue(){
+        endExecute = System.currentTimeMillis();
+    }
+
+	public String getCostDetail() {
+		// Final end
+		end = System.currentTimeMillis();
+		Map<String, String> costDetailMap = new LinkedHashMap<>();
+		costDetailMap.put("'Decode'", begin == 0 ? "'0'" : "'" + Long.toString(beginConnect - begin) + "'");
+		costDetailMap.put("'Connect'", "'" + Long.toString(endConnect - beginConnect) + "'");
+		costDetailMap.put("'Prepare'", "'" + Long.toString(beginExecute - endConnect) + "'");
+		costDetailMap.put("'Execute'", "'" + Long.toString(endExecute - beginExecute) + "'");
+		costDetailMap.put("'ClearUp'", "'" + Long.toString(end - endExecute) + "'");
+		return costDetailMap.toString();
+	}
+
+    /**
+     * @return Current caller
+     */
+	public String getCaller() {
+        String sqlType = getDao() + "." + getMethod();
+        
+        // If comes from internal executor
+        if(sqlType.startsWith("java.util.concurrent.FutureTask"))
+            sqlType = currentCaller.get();
+        
+        return sqlType;
+    }
+	
+	public String getCallerInShort() {
+	    try {
+            String caller = getCaller();
+            int lastIndex = caller.lastIndexOf('.');
+            
+            lastIndex = caller.lastIndexOf('.', lastIndex - 1);
+            return caller.substring(lastIndex + 1);
+        } catch (Throwable e) {
+            return "Error!! Can Not Locate Calller";
+        }
+	}
+	
+    /**
+     * Put curent caller into threadlocal to allow ConnectionAction get caller in later stage
+     */
+    public static void populateCurrentCaller(String caller) {
+        currentCaller.set(caller);
+    }
+    
+    /**
+     * Clear curent caller of threadlocal
+     */
+    public static void clearCurrentCaller() {
+        currentCaller.remove();
+    }
+
+    public synchronized static void init(){
+        if(currentCaller != null)
+            return;
+        
+        currentCaller = new ThreadLocal<>();
+    }
+
+    public synchronized static void shutdown() {
+        if(currentCaller == null)
+            return;
+        
+        currentCaller.remove();
+        currentCaller = null;
+    }
+
+	public Set<String> extractTablesFromSqls() {
+		Set<String> tables = new HashSet<>();
+		if (sqls != null)
+			tables = tableParser.getTablesFromSqls(sqls);
+		if (callString != null)
+			tables = tableParser.getTablesFromSqls(callString);
+		if (tables.size() == 0)
+			tables.add(NOT_FOUND);
+		return tables;
+	}
+
+	public void setTables(Set<String> tables) {
+		if (tables == null || tables.size() == 0) {
+			this.tables = extractTablesFromSqls();
+			return;
+		}
+		this.tables = tables;
+	}
+
+	public Set<String> getTables(){
+		return tables;
 	}
 }

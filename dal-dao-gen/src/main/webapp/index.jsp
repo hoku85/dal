@@ -18,6 +18,9 @@
     <meta name="description" content="">
     <meta name="author" content="">
     <title>Ctrip DAO Generator</title>
+    <!-- Favicons -->
+    <link href="/static/images/favicon.ico" rel="shortcut icon">
+    <link href="/static/css/common.css?codegen=${version}" rel="stylesheet">
     <!-- Bootstrap core CSS -->
     <link href="/static/bootstrap/css/bootstrap.min.css?codegen=${version}" rel="stylesheet">
     <link href="/static/bootstrap/css/bootstrap-responsive.min.css?codegen=${version}" rel="stylesheet">
@@ -25,34 +28,8 @@
     <link href="/static/jstree/themes/default/style.min.css?codegen=${version}" rel="stylesheet"/>
     <link href="/static/css/multiple-select.css?codegen=${version}" rel="stylesheet">
     <link href="/static/css/selectize.bootstrap3.css?codegen=${version}" rel="stylesheet">
-    <link href="/static/css/common.css?codegen=${version}" rel="stylesheet">
-
-    <!-- Documentation extras -->
-    <!--
-             <link href="../css/docs.css" rel="stylesheet">
-             -->
-    <!--
-             <link href="../css/pygments-manni.css" rel="stylesheet">
-             -->
-    <!--[if lt IE 9]>
-    <script src="./docs-assets/js/ie8-responsive-file-warning.js"></script>
-    <![endif]-->
-    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
-    <!--[if lt IE 9]>
-    <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
-    <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
-    <![endif]-->
-    <!-- Favicons -->
-    <link rel="shortcut icon" href="/static/images/favicon.ico">
-
     <!-- Loading Flat UI -->
-    <link href="/static/Flat-UI-master/css/flat-ui.css?codegen=${codegenpageflag}" rel="stylesheet">
-
-    <!-- HTML5 shim, for IE6-8 support of HTML5 elements. All other JS at the end of file. -->
-    <!--[if lt IE 9]>
-    <script src="/static/Flat-UI-master/js/html5shiv.js"></script>
-    <script src="/static/Flat-UI-master/js/respond.min.js"></script>
-    <![endif]-->
+    <link href="/static/Flat-UI-master/css/flat-ui.css?codegen=${version}" rel="stylesheet">
 </head>
 <body>
 <!-- Docs master nav -->
@@ -140,17 +117,6 @@
                     </select>
                     </div>
                 </div>
-                <!--
-              <div class="row-fluid">
-                 <div class="control-group">
-                       <label class="control-label popup_label">方式：</label>
-                   <select id="regenerate" class="span9 pupup_text">
-                           <option value="regenerate">重新生成</option>
-                        <option value="increment_gen">增量生成，仅生成被修改的DAO</option>
-                    </select>
-                 </div>
-              </div>
-               -->
                 <div class="row-fluid useNewPojo">
                     <label class="popup_label"><input id="newPojo" type="checkbox" checked="checked">生成代码时附带数据库中的类型（DALFx>V1.2.0.6）</label>
                 </div>
@@ -255,6 +221,11 @@
                     <div class="row-fluid">
                         <div class="control-group">
                             <label class="control-label popup_label" style="width: 130px;">选择SQL风格：</label>
+                            <a style="margin-left: 8px;" href="#" class="ctip"
+                               data-toggle="tooltip" data-placement="left" title="1、同一个Project下不允许C#和Java DAO共存<br/>
+                               2、新建DAO时，语言强制指定为该Project下第一个DAO的语言类型">
+                                <span class="glyphicon glyphicon-question-sign"></span>
+                            </a>
                             <select id="sql_style" class="span8">
                                 <option value="csharp" selected="selected">C#风格(参数形式为@Name)</option>
                                 <option value="java">JAVA风格(参数形式为?)</option>
@@ -268,8 +239,8 @@
                         </div>
                     </div>
                 </div>
-                <div class="steps step2-1 row-fluid">
-                    <div class="row-fluid">
+                <div class="steps step2-1 row-fluid height-340">
+                    <div class="row-fluid margin-bottom-20">
                         <div class="control-group">
                             <label class="control-label popup_label">选择表：</label> <select id="table_list"
                                                                                           multiple="multiple"
@@ -278,7 +249,7 @@
                         </select>
                         </div>
                     </div>
-                    <div class="row-fluid">
+                    <div class="row-fluid margin-bottom-20">
                         <div class="control-group">
                             <label class="control-label popup_label">选择视图：</label> <select id="view_list"
                                                                                            multiple="multiple"
@@ -287,7 +258,7 @@
                         </select>
                         </div>
                     </div>
-                    <div class="row-fluid mysql_hide">
+                    <div class="row-fluid mysql_hide margin-bottom-20">
                         <div class="control-group">
                             <label class="control-label popup_label">选择存储过程：</label> <select id="sp_list"
                                                                                              multiple="multiple"
@@ -296,37 +267,41 @@
                         </select>
                         </div>
                     </div>
-                    <div class="row-fluid">
+                    <div class="row-fluid margin-bottom-20">
                         <div class="control-group">
                             <label class="control-label popup_label">移除DAO名前缀：</label> <input type="text" id="prefix"
                                                                                               class="span9 popup_text input-sm">
                         </div>
                     </div>
-                    <div class="row-fluid">
+                    <div class="row-fluid margin-bottom-20">
                         <div class="control-group">
                             <label class="control-label popup_label">添加DAO名后缀：</label> <input type="text" id="suffix"
                                                                                               class="span9 popup_text input-sm">
                         </div>
                     </div>
-                    <div class="row-fluid mysql_hide">
-                        <label class="popup_label"><input id="cud_by_sp" type="checkbox" checked="true">增删改使用SPA或SP3（SqlServer请勾选，MySql请去除）</label>
+                    <div class="row-fluid mysql_hide margin-bottom-20">
+                        <label class="popup_label"><input id="cud_by_sp" type="checkbox">增删改使用SPA或SP3（SqlServer请勾选，MySql请去除）</label>
                     </div>
-                    <div class="row-fluid">
+                    <div class="row-fluid margin-bottom-20">
                         <label class="popup_label"><input id="pagination" type="checkbox" checked="true">增加分页方法</label>
                     </div>
+                    <%--<div class="row-fluid margin-bottom-20" id="divStandardLength">--%>
+                    <%--<label class="popup_label"><input id="standard_length_property" type="checkbox">增加Column--%>
+                    <%--length属性</label>--%>
+                    <%--</div>--%>
                 </div>
                 <div class="steps step2-1-2 row-fluid">
                     <div class="panel-group" id="accordion">
                         <div class="panel panel-default">
                             <div class="panel-heading">
                                 <h4 class="panel-title">
-                                    <input id="SelectAllCreateMethodAPIChk" type="checkbox" checked="true"> <a
+                                    <input id="selectAllCreateMethodAPIChk" type="checkbox" checked="true"> <a
                                         data-toggle="collapse" data-parent="#accordion" href="#collapseOne"
                                         style="font-size: 15px"> Create Method </a>
                                 </h4>
                             </div>
                             <div id="collapseOne" class="panel-collapse collapse in">
-                                <div class="panel-body" id="CreateMethodListDiv"
+                                <div class="panel-body" id="createMethodListDiv"
                                      style="max-height: 300px; overflow-y: auto">Create Method list here.
                                 </div>
                             </div>
@@ -334,13 +309,13 @@
                         <div class="panel panel-default">
                             <div class="panel-heading">
                                 <h4 class="panel-title">
-                                    <input id="SelectAllRetrieveMethodAPIChk" type="checkbox" checked="true"> <a
+                                    <input id="selectAllRetrieveMethodAPIChk" type="checkbox" checked="true"> <a
                                         data-toggle="collapse" data-parent="#accordion" href="#collapseTwo"
                                         style="font-size: 15px"> Retrieve Method </a>
                                 </h4>
                             </div>
                             <div id="collapseTwo" class="panel-collapse collapse">
-                                <div class="panel-body" id="RetrieveMethodListDiv"
+                                <div class="panel-body" id="retrieveMethodListDiv"
                                      style="max-height: 300px; overflow-y: auto">Retrieve Method list here.
                                 </div>
                             </div>
@@ -348,13 +323,13 @@
                         <div class="panel panel-default">
                             <div class="panel-heading">
                                 <h4 class="panel-title">
-                                    <input id="SelectAllUpdateMethodAPIChk" type="checkbox" checked="true"> <a
+                                    <input id="selectAllUpdateMethodAPIChk" type="checkbox" checked="true"> <a
                                         data-toggle="collapse" data-parent="#accordion" href="#collapseThree"
                                         style="font-size: 15px"> Update Method </a>
                                 </h4>
                             </div>
                             <div id="collapseThree" class="panel-collapse collapse">
-                                <div class="panel-body" id="UpdateMethodListDiv"
+                                <div class="panel-body" id="updateMethodListDiv"
                                      style="max-height: 300px; overflow-y: auto">Update Method list here.
                                 </div>
                             </div>
@@ -362,13 +337,13 @@
                         <div class="panel panel-default">
                             <div class="panel-heading">
                                 <h4 class="panel-title">
-                                    <input id="SelectAllDeleteMethodAPIChk" type="checkbox" checked="true"> <a
+                                    <input id="selectAllDeleteMethodAPIChk" type="checkbox" checked="true"> <a
                                         data-toggle="collapse" data-parent="#accordion" href="#collapseFour"
                                         style="font-size: 15px"> Delete Method </a>
                                 </h4>
                             </div>
                             <div id="collapseFour" class="panel-collapse collapse">
-                                <div class="panel-body" id="DeleteMethodListDiv"
+                                <div class="panel-body" id="deleteMethodListDiv"
                                      style="max-height: 300px; overflow-y: auto">Delete Method list here.
                                 </div>
                             </div>
@@ -415,9 +390,7 @@
                             </div>
                         </div>
                     </div>
-                    <br>
-
-                    <div id="where_condition" class="step2-2-1-2">
+                    <div id="where_condition" class="step2-2-1-2" style="margin-top: 16px;">
                         <div class="row-fluid">
                             <div class="control-group">
                                 <label class="control-label popup_label">Where条件：</label> <select id="conditions"
@@ -445,44 +418,48 @@
                                              class="span2 btn btn-primary popup_text input-sm" value="添加">
                             </div>
                         </div>
-                        <br>
-
-                        <div class="row-fluid">
+                        <div class="row-fluid" style="margin-top: 16px;">
                             <select class="span10" id="selected_condition" multiple="multiple" style="height: 120px;">
                             </select> <input id="del_condition" type="button"
                                              class="span2 btn btn-danger popup_text input-sm" value="删除">
                         </div>
                     </div>
-                    <br>
-
-                    <div class="row-fluid" id="auto_sql_scalarTypeDiv">
+                    <div class="row-fluid" id="auto_sql_scalarTypeDiv" style="margin-top: 16px;">
                         <div class="control-group">
                             <label class="control-label popup_label">返回形式：</label> <select id="auto_sql_scalarType"
                                                                                            class='span5'>
                             <option value='List'>列表(List)</option>
                             <option value='Single'>唯一的(Single)</option>
                             <option value='First'>第一个(First)</option>
-                        </select> <label class="popup_label" style="padding-left: 15px">
-                            <input id="auto_sql_pagination" type="checkbox"> 增加分页方法
-                        </label>
+                        </select>
                         </div>
                     </div>
-                    <div id="orderby">
-                        <div class="row-fluid">
-                            <div class="control-group">
-                                <label class="control-label popup_label">Order by：</label> <select id="orderby_field"
-                                                                                                   class="span5">
-                                <option value='-1'>--请选择--</option>
-                            </select> <select id="orderby_sort" class='span3'>
-                                <option value='asc'>ASC</option>
-                                <option value='desc'>DESC</option>
-                            </select>
-                            </div>
+                    <div class="row-fluid" id="orderby">
+                        <div class="control-group">
+                            <label class="control-label popup_label">Order by：</label> <select id="orderby_field"
+                                                                                               class="span5">
+                            <option value='-1'>--请选择--</option>
+                        </select> <select id="orderby_sort" class='span3'>
+                            <option value='asc'>ASC</option>
+                            <option value='desc'>DESC</option>
+                        </select>
                         </div>
                     </div>
-                    <br>
-
                     <div class="row-fluid">
+                        <div class="control-group">
+                            <label class="popup_label">
+                                <input id="auto_sql_pagination" type="checkbox"> 增加分页方法
+                            </label>
+                        </div>
+                    </div>
+                    <%--<div class="row-fluid" id="divBuildLength">--%>
+                    <%--<div class="control-group">--%>
+                    <%--<label class="popup_label">--%>
+                    <%--<input id="build_length_property" type="checkbox"> 增加Column length属性--%>
+                    <%--</label>--%>
+                    <%--</div>--%>
+                    <%--</div>--%>
+                    <div class="row-fluid" style="margin-top: 16px;">
                         <div id="sql_builder" class="span12" style="height: 100px;">
                         </div>
                     </div>
@@ -599,20 +576,31 @@
                             <select id="sql_pojo_name" class="span9"></select>
                         </div>
                     </div>
-                    <div class="row-fluid" id="free_sql_scalarTypeDiv" style="margin-top: 12px">
+                    <div class="row-fluid" id="free_sql_scalarTypeDiv">
                         <div class="control-group">
                             <label class="control-label popup_label" style="width: 90px;">返回形式：</label>
                             <select id="free_sql_scalarType" class='span5'>
                                 <option value='List'>列表(List)</option>
                                 <option value='Single'>唯一的(Single)</option>
                                 <option value='First'>第一个(First)</option>
-                            </select> <label class="popup_label" style="padding-left: 20px">
-                            <input id="free_sql_pagination" type="checkbox"> 增加分页方法
-                        </label>
+                            </select>
                         </div>
                     </div>
+                    <div class="row-fluid">
+                        <div class="control-group">
+                            <label class="popup_label">
+                                <input id="free_sql_pagination" type="checkbox"> 增加分页方法
+                            </label>
+                        </div>
+                    </div>
+                    <%--<div class="row-fluid" id="divFreeLength">--%>
+                    <%--<div class="control-group">--%>
+                    <%--<label class="popup_label">--%>
+                    <%--<input id="free_length_property" type="checkbox"> 增加Column length属性--%>
+                    <%--</label>--%>
+                    <%--</div>--%>
+                    <%--</div>--%>
                     <label class="control-label popup_label">输入SQL，占位符：Java请使用?，c#请使用@Name形式</label>
-
                     <div class="row-fluid">
                         <div id="sql_editor" class="span12" style="height: 200px;">
                         </div>
@@ -765,17 +753,22 @@
     </div>
 </div>
 <!--End modal-->
-<!-- JS and analytics only. -->
-<!-- Bootstrap core JavaScript================================================== -->
-<!-- Placed at the end of the document so the pages load faster -->
+
+<!--[if lt IE 9]>
+<script src="./docs-assets/js/ie8-responsive-file-warning.js"></script>
+<![endif]-->
+<!--[if lt IE 9]>
+<script src="/static/Flat-UI-master/js/html5shiv.js"></script>
+<script src="/static/Flat-UI-master/js/respond.min.js"></script>
+<![endif]-->
 <script src="/static/jquery/jquery-1.10.2.min.js?codegen=${version}"></script>
+<script src="/static/jquery/jquery.blockui.min.js?codegen=${version}"></script>
+<script src="/static/jquery/multiple-select.js?codegen=${version}"></script>
 <script src="/static/bootstrap/js/bootstrap.min.js?codegen=${version}"></script>
 <script src="/static/w2ui/w2ui-1.3.2.min.js?codegen=${version}"></script>
 <script src="/static/jstree/jstree.js?codegen=${version}"></script>
-<script src="/static/jquery/jquery.blockui.min.js?codegen=${version}"></script>
 <script src="/static/js/sprintf.js?codegen=${version}"></script>
 <script src="/static/ace/ace.js?codegen=${version}"></script>
-<script src="/static/jquery/jquery.multiple.select.js?codegen=${version}"></script>
 <script src="/static/js/selectize.min.js?codegen=${version}"></script>
 <script src="/static/js/cblock.js?codegen=${version}"></script>
 <script src="/static/js/header.js?codegen=${version}"></script>

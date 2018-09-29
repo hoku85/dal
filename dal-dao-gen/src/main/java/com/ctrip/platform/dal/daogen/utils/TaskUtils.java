@@ -1,31 +1,36 @@
 package com.ctrip.platform.dal.daogen.utils;
 
 import com.ctrip.platform.dal.daogen.entity.ExecuteResult;
-import org.apache.log4j.Logger;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 
 public class TaskUtils {
-    private static Logger logger = Logger.getLogger(TaskUtils.class);
-    private static ExecutorService executor = new ThreadPoolExecutor(20, 50, 120, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
+    private static ExecutorService executor =
+            new ThreadPoolExecutor(20, 50, 120, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
 
-    public static void invokeBatch(Logger log, List<Callable<ExecuteResult>> tasks) {
-        try {
-            TaskUtils.log(log, executor.invokeAll(tasks));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
+    public static void invokeBatch(List<Callable<ExecuteResult>> tasks) throws Exception {
+        if (tasks == null || tasks.size() == 0)
+            return;
 
-    public static void log(Logger log, List<Future<ExecuteResult>> tasks) {
-        for (Future<ExecuteResult> future : tasks) {
+        List<Future<ExecuteResult>> results = executor.invokeAll(tasks);
+        List<String> exceptions = new ArrayList<>();
+        for (Future<ExecuteResult> future : results) {
             try {
                 ExecuteResult result = future.get();
-                log.info(String.format("Execute [%s] task completed: %s", result.getTaskName(), result.isSuccessal()));
-            } catch (Exception e) {
-                logger.error(e.getMessage(), e);
+            } catch (Throwable e) {
+                exceptions.add(e.getMessage());
             }
+        }
+
+        if (exceptions.size() > 0) {
+            StringBuilder sb = new StringBuilder();
+            for (String exception : exceptions) {
+                sb.append(exception);
+            }
+
+            throw new RuntimeException(sb.toString());
         }
     }
 

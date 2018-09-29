@@ -10,7 +10,7 @@ import java.util.Map;
  * in-direct(DAS mode) connection to DB.
  * @author jhhe
  */
-public interface DalClient {
+public interface DalClient{
 	/**
 	 * Query against the given sql and parameters. The result set will be
 	 * processed by the given extractor
@@ -88,7 +88,7 @@ public interface DalClient {
 	
 	/**
 	 * Execute list of commands in the same transaction. This is useful when you have several
-	 * commands and you want to combine them in the flexible way.
+	 * commands and you want to combine them in a flexible way.
 	 * 
 	 * @param commands Container that holds commands
 	 * @param hints Additional parameters that instruct how DAL Client perform database operation.
